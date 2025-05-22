@@ -20,12 +20,15 @@ public class ClienteForm extends JFrame {
     private final ClienteService clienteService;
 
     private final JTextField nomeField = new JTextField();
+    private final JButton filtrarNomeButton = new JButton("🔍");
+
     private final JFormattedTextField cpfField;
+    private final JButton buscarCpfButton = new JButton("🔍");
+
     private final JFormattedTextField telefoneField;
     private final JTextField emailField = new JTextField();
 
     private final JButton salvarButton = new JButton("Salvar");
-    private final JButton buscarButton = new JButton("Buscar");
     private final JButton alterarButton = new JButton("Alterar");
     private final JButton excluirButton = new JButton("Excluir");
     private final JButton listarButton = new JButton("Listar Todos");
@@ -59,7 +62,7 @@ public class ClienteForm extends JFrame {
 
         setTitle("Cadastro de Cliente");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(700, 500);
+        setSize(800, 550);
         setLocationRelativeTo(null);
 
         setLayout(new GridBagLayout());
@@ -67,41 +70,53 @@ public class ClienteForm extends JFrame {
         gbc.insets = new Insets(8, 8, 8, 8);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Campos
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        // Nome
+        gbc.gridx = 0; gbc.gridy = 0;
         add(new JLabel("Nome:"), gbc);
+
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
         add(nomeField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        gbc.gridx = 2; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        add(filtrarNomeButton, gbc);
+
+        // CPF
+        gbc.gridx = 0; gbc.gridy = 1;
         add(new JLabel("CPF:"), gbc);
+
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
         add(cpfField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        gbc.gridx = 2; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        add(buscarCpfButton, gbc);
+
+        // Telefone
+        gbc.gridx = 0; gbc.gridy = 2;
         add(new JLabel("Telefone:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 1; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.HORIZONTAL;
         add(telefoneField, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        // Email
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
         add(new JLabel("E-mail:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 1; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.HORIZONTAL;
         add(emailField, gbc);
 
-        // Botões
+        // Botões principais
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         buttonsPanel.add(salvarButton);
-        buttonsPanel.add(buscarButton);
         buttonsPanel.add(alterarButton);
         buttonsPanel.add(excluirButton);
         buttonsPanel.add(listarButton);
         buttonsPanel.add(limparButton);
 
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE;
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 3;
         add(buttonsPanel, gbc);
 
         // Tabela
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 3; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.BOTH;
         JScrollPane scrollPane = new JScrollPane(clientesTable);
         add(scrollPane, gbc);
 
@@ -110,7 +125,8 @@ public class ClienteForm extends JFrame {
 
         // Ações dos botões
         salvarButton.addActionListener(e -> salvarCliente());
-        buscarButton.addActionListener(e -> buscarCliente());
+        buscarCpfButton.addActionListener(e -> buscarClientePorCpf());
+        filtrarNomeButton.addActionListener(e -> filtrarPorNome());
         alterarButton.addActionListener(e -> alterarCliente());
         excluirButton.addActionListener(e -> excluirCliente());
         listarButton.addActionListener(e -> listarClientes());
@@ -149,7 +165,7 @@ public class ClienteForm extends JFrame {
         }
     }
 
-    private void buscarCliente() {
+    private void buscarClientePorCpf() {
         String cpf = cpfField.getText().trim();
         if (cpf.contains("_")) {
             JOptionPane.showMessageDialog(this, "Preencha o CPF completo.", "Aviso", JOptionPane.WARNING_MESSAGE);
@@ -166,6 +182,20 @@ public class ClienteForm extends JFrame {
         } else {
             JOptionPane.showMessageDialog(this, "Cliente não encontrado.", "Info", JOptionPane.INFORMATION_MESSAGE);
             limparCampos();
+        }
+    }
+
+    private void filtrarPorNome() {
+        String nome = nomeField.getText().trim();
+        if (nome.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Informe parte do nome para filtrar.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        List<Cliente> clientes = clienteService.buscarPorNome(nome);
+        tableModel.setRowCount(0);
+        for (Cliente c : clientes) {
+            tableModel.addRow(new Object[]{c.getId(), c.getNome(), c.getCpf(), c.getTelefone(), c.getEmail()});
         }
     }
 
@@ -234,6 +264,7 @@ public class ClienteForm extends JFrame {
         excluirButton.setEnabled(false);
         salvarButton.setEnabled(true);
         clientesTable.clearSelection();
+        tableModel.setRowCount(0);
     }
 
     private boolean validarCampos() {
