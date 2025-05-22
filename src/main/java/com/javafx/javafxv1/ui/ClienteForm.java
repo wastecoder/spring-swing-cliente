@@ -1,7 +1,10 @@
 package com.javafx.javafxv1.ui;
 
+import com.javafx.javafxv1.dto.ClienteDto;
 import com.javafx.javafxv1.model.Cliente;
 import com.javafx.javafxv1.service.ClienteService;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,27 +15,34 @@ import java.awt.*;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 
 @Component
 public class ClienteForm extends JFrame {
 
     private final ClienteService clienteService;
+    private final Validator validator;
 
     private final JTextField nomeField = new JTextField();
-    private final JButton filtrarNomeButton = new JButton("🔍");
+    private final JLabel nomeErrorLabel = new JLabel();
 
     private final JFormattedTextField cpfField;
+    private final JLabel cpfErrorLabel = new JLabel();
     private final JButton buscarCpfButton = new JButton("🔍");
 
     private final JFormattedTextField telefoneField;
+    private final JLabel telefoneErrorLabel = new JLabel();
+
     private final JTextField emailField = new JTextField();
+    private final JLabel emailErrorLabel = new JLabel();
 
     private final JButton salvarButton = new JButton("Salvar");
     private final JButton alterarButton = new JButton("Alterar");
     private final JButton excluirButton = new JButton("Excluir");
     private final JButton listarButton = new JButton("Listar Todos");
     private final JButton limparButton = new JButton("Limpar");
+    private final JButton filtrarNomeButton = new JButton("🔍");
 
     private final DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"ID", "Nome", "CPF", "Telefone", "E-mail"}, 0);
     private final JTable clientesTable = new JTable(tableModel);
@@ -40,8 +50,9 @@ public class ClienteForm extends JFrame {
     private Cliente clienteAtual = null;
 
     @Autowired
-    public ClienteForm(ClienteService clienteService) {
+    public ClienteForm(ClienteService clienteService, Validator validator) {
         this.clienteService = clienteService;
+        this.validator = validator;
 
         // Máscaras
         JFormattedTextField cpf = null;
@@ -60,70 +71,80 @@ public class ClienteForm extends JFrame {
         cpfField = cpf != null ? cpf : new JFormattedTextField();
         telefoneField = tel != null ? tel : new JFormattedTextField();
 
+        // Estilo para labels de erro
+        Color errorColor = Color.RED;
+        Font errorFont = new Font("Arial", Font.PLAIN, 10);
+        nomeErrorLabel.setForeground(errorColor); nomeErrorLabel.setFont(errorFont);
+        cpfErrorLabel.setForeground(errorColor); cpfErrorLabel.setFont(errorFont);
+        telefoneErrorLabel.setForeground(errorColor); telefoneErrorLabel.setFont(errorFont);
+        emailErrorLabel.setForeground(errorColor); emailErrorLabel.setFont(errorFont);
+
         setTitle("Cadastro de Cliente");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 550);
         setLocationRelativeTo(null);
-
         setLayout(new GridBagLayout());
+
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.insets = new Insets(8, 8, 2, 8);
         gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Nome
         gbc.gridx = 0; gbc.gridy = 0;
         add(new JLabel("Nome:"), gbc);
-
-        gbc.gridx = 1; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 1; gbc.gridwidth = 1; gbc.weightx = 1.0;
         add(nomeField, gbc);
-
-        gbc.gridx = 2; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        gbc.gridx = 2; gbc.weightx = 0;
         add(filtrarNomeButton, gbc);
+        gbc.gridx = 1; gbc.gridy = 1; gbc.gridwidth = 2;
+        add(nomeErrorLabel, gbc);
 
         // CPF
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
         add(new JLabel("CPF:"), gbc);
-
-        gbc.gridx = 1; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 1;
         add(cpfField, gbc);
-
-        gbc.gridx = 2; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        gbc.gridx = 2;
         add(buscarCpfButton, gbc);
+        gbc.gridx = 1; gbc.gridy = 3; gbc.gridwidth = 2;
+        add(cpfErrorLabel, gbc);
 
         // Telefone
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 1;
         add(new JLabel("Telefone:"), gbc);
-
-        gbc.gridx = 1; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 1; gbc.gridwidth = 2;
         add(telefoneField, gbc);
+        gbc.gridx = 1; gbc.gridy = 5;
+        add(telefoneErrorLabel, gbc);
 
         // Email
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 1;
         add(new JLabel("E-mail:"), gbc);
-
-        gbc.gridx = 1; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 1; gbc.gridwidth = 2;
         add(emailField, gbc);
+        gbc.gridx = 1; gbc.gridy = 7;
+        add(emailErrorLabel, gbc);
 
         // Botões principais
+        gbc.gridx = 0; gbc.gridy = 8; gbc.gridwidth = 3;
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         buttonsPanel.add(salvarButton);
         buttonsPanel.add(alterarButton);
         buttonsPanel.add(excluirButton);
         buttonsPanel.add(listarButton);
         buttonsPanel.add(limparButton);
-
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 3;
         add(buttonsPanel, gbc);
 
         // Tabela
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 3; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = 0; gbc.gridy = 9; gbc.gridwidth = 3; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.BOTH;
         JScrollPane scrollPane = new JScrollPane(clientesTable);
         add(scrollPane, gbc);
 
         alterarButton.setEnabled(false);
         excluirButton.setEnabled(false);
 
-        // Ações dos botões
+        // Ações
         salvarButton.addActionListener(e -> salvarCliente());
         buscarCpfButton.addActionListener(e -> buscarClientePorCpf());
         filtrarNomeButton.addActionListener(e -> filtrarPorNome());
@@ -145,8 +166,37 @@ public class ClienteForm extends JFrame {
         });
     }
 
+    private boolean validarComDto() {
+        nomeErrorLabel.setText("");
+        cpfErrorLabel.setText("");
+        telefoneErrorLabel.setText("");
+        emailErrorLabel.setText("");
+
+        ClienteDto dto = new ClienteDto(
+                nomeField.getText().trim(),
+                cpfField.getText().trim(),
+                telefoneField.getText().trim(),
+                emailField.getText().trim()
+        );
+
+        Set<ConstraintViolation<ClienteDto>> violations = validator.validate(dto);
+
+        if (!violations.isEmpty()) {
+            for (ConstraintViolation<ClienteDto> v : violations) {
+                switch (v.getPropertyPath().toString()) {
+                    case "nome": nomeErrorLabel.setText(v.getMessage()); break;
+                    case "cpf": cpfErrorLabel.setText(v.getMessage()); break;
+                    case "telefone": telefoneErrorLabel.setText(v.getMessage()); break;
+                    case "email": emailErrorLabel.setText(v.getMessage()); break;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
     private void salvarCliente() {
-        if (!validarCampos()) return;
+        if (!validarComDto()) return;
 
         Cliente cliente = new Cliente(
                 nomeField.getText().trim(),
@@ -200,7 +250,7 @@ public class ClienteForm extends JFrame {
     }
 
     private void alterarCliente() {
-        if (clienteAtual == null || !validarCampos()) return;
+        if (clienteAtual == null || !validarComDto()) return;
 
         int confirm = JOptionPane.showConfirmDialog(this, "Deseja alterar os dados do cliente?", "Confirmar Alteração", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
@@ -259,30 +309,17 @@ public class ClienteForm extends JFrame {
         cpfField.setValue(null);
         telefoneField.setValue(null);
         emailField.setText("");
+
+        nomeErrorLabel.setText("");
+        cpfErrorLabel.setText("");
+        telefoneErrorLabel.setText("");
+        emailErrorLabel.setText("");
+
         clienteAtual = null;
         alterarButton.setEnabled(false);
         excluirButton.setEnabled(false);
         salvarButton.setEnabled(true);
         clientesTable.clearSelection();
         tableModel.setRowCount(0);
-    }
-
-    private boolean validarCampos() {
-        if (nomeField.getText().trim().isEmpty() ||
-                cpfField.getText().contains("_") ||
-                telefoneField.getText().contains("_") ||
-                emailField.getText().trim().isEmpty()) {
-
-            JOptionPane.showMessageDialog(this, "Preencha todos os campos corretamente.", "Erro", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-
-        String email = emailField.getText().trim();
-        if (!email.matches("^[\\w\\.-]+@[\\w\\.-]+\\.[a-zA-Z]{2,6}$")) {
-            JOptionPane.showMessageDialog(this, "E-mail inválido.", "Erro", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-
-        return true;
     }
 }
