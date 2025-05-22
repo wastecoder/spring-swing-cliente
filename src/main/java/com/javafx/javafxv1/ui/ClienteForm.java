@@ -13,6 +13,7 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 
+
 @Component
 public class ClienteForm extends JFrame {
 
@@ -28,6 +29,7 @@ public class ClienteForm extends JFrame {
     private final JButton alterarButton = new JButton("Alterar");
     private final JButton excluirButton = new JButton("Excluir");
     private final JButton listarButton = new JButton("Listar Todos");
+    private final JButton limparButton = new JButton("Limpar");
 
     private final DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"ID", "Nome", "CPF", "Telefone", "E-mail"}, 0);
     private final JTable clientesTable = new JTable(tableModel);
@@ -93,6 +95,7 @@ public class ClienteForm extends JFrame {
         buttonsPanel.add(alterarButton);
         buttonsPanel.add(excluirButton);
         buttonsPanel.add(listarButton);
+        buttonsPanel.add(limparButton);
 
         gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE;
         add(buttonsPanel, gbc);
@@ -111,6 +114,7 @@ public class ClienteForm extends JFrame {
         alterarButton.addActionListener(e -> alterarCliente());
         excluirButton.addActionListener(e -> excluirCliente());
         listarButton.addActionListener(e -> listarClientes());
+        limparButton.addActionListener(e -> limparCampos());
 
         clientesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         clientesTable.getSelectionModel().addListSelectionListener(e -> {
